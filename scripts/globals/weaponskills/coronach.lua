@@ -1,4 +1,5 @@
 -----------------------------------
+-- Coronach
 -- Skill Level: N/A
 -- Description: Additional effect: temporarily lowers enmity.
 -- Lowers Enmity for a certain amount of time. (Enmity -20)
@@ -36,7 +37,7 @@ function onUseWeaponSkill(player, target, wsID, tp, primary)
     local damage, criticalHit, tpHits, extraHits = doRangedWeaponskill(player, target, wsID, params, tp, primary);
     -- TODO: Whoever codes those level 85 weapons with the latent that grants this WS needs to code a check to not give the aftermath effect.
     if (damage > 0) then
-        local amDuration = 20 * math.floor(tp/100);
+        local amDuration = 20 * math.floor(tp/1000);
         player:addStatusEffect(EFFECT_AFTERMATH, -20, 0, amDuration, 0, 11);
     end
 

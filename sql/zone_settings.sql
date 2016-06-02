@@ -175,7 +175,7 @@ INSERT INTO `zone_settings` VALUES (126,2,'127.0.0.1',54230,'Qufim_Island',0,0,1
 INSERT INTO `zone_settings` VALUES (127,2,'127.0.0.1',54230,'Behemoths_Dominion',0,0,101,103,0,0.00,152);
 INSERT INTO `zone_settings` VALUES (128,2,'127.0.0.1',54230,'Valley_of_Sorrows',0,0,101,191,0,0.00,152);
 INSERT INTO `zone_settings` VALUES (129,6,'127.0.0.1',54230,'Ghoyus_Reverie',0,0,216,216,0,0.00,145);
-INSERT INTO `zone_settings` VALUES (130,1,'127.0.0.1',54230,'RuAun_Gardens',210,210,101,191,0,0.00,152);
+INSERT INTO `zone_settings` VALUES (130,2,'127.0.0.1',54230,'RuAun_Gardens',210,210,101,191,0,0.00,152);
 INSERT INTO `zone_settings` VALUES (131,3,'127.0.0.1',54230,'Mordion_Gaol',0,0,0,0,0,0.00,0);
 INSERT INTO `zone_settings` VALUES (132,2,'127.0.0.1',54230,'Abyssea-La_Theine',51,51,52,52,0,0.00,0);
 INSERT INTO `zone_settings` VALUES (133,0,'127.0.0.1',0,'133',0,0,0,0,0,0.00,0);
@@ -337,7 +337,7 @@ INSERT INTO `zone_settings` VALUES (288,2,'127.0.0.1',54230,'Escha_ZiTah',80,80,
 INSERT INTO `zone_settings` VALUES (289,2,'127.0.0.1',54230,'Escha_RuAun',80,80,80,80,0,0.00,0);
 INSERT INTO `zone_settings` VALUES (290,0,'127.0.0.1',54230,'Desuetia_Empyreal_Paradox',0,0,0,0,0,0.00,128);
 INSERT INTO `zone_settings` VALUES (291,0,'127.0.0.1',54230,'Reisenjima',79,79,79,79,0,0.00,128);
-INSERT INTO `zone_settings` VALUES (292,0,'127.0.0.1',0,'292',0,0,0,0,0,0.00,0);
+INSERT INTO `zone_settings` VALUES (292,0,'127.0.0.1',54230,'Reisenjima_Henge',0,0,0,0,0,0.00,0);
 INSERT INTO `zone_settings` VALUES (293,0,'127.0.0.1',54230,'Reisenjima_Sanctorium',0,0,0,0,0,0.00,128);
 /*!40000 ALTER TABLE `zone_settings` ENABLE KEYS */;
 UNLOCK TABLES;

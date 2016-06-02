@@ -27,12 +27,6 @@ This file is part of DarkStar-server source code.
 #include "controller.h"
 #include "../../entities/mobentity.h"
 
-// mobs will deaggro if player is out of range for this long
-#define MOB_DEAGGRO_TIME 25000
-
-// time a mob is neutral after disengaging
-#define MOB_NEUTRAL_TIME 10000
-
 class CMobController : public CController
 {
 public:
@@ -40,7 +34,10 @@ public:
 
     virtual void Tick(time_point tick) override;
     virtual void Disengage() override;
+    virtual bool Engage(uint16 targid) override;
     virtual void Despawn() override;
+    virtual void Reset() override;
+
     virtual bool MobSkill(uint16 targid, uint16 wsid);
     virtual void Ability(uint16 targid, uint16 abilityid) override {}
     bool MobSkill(int list = 0);
@@ -48,14 +45,21 @@ public:
     bool TrySpecialSkill();
 
     bool CanAggroTarget(CBattleEntity*);
+    void TapDeaggroTime();
 
 protected:
     virtual bool TryDeaggro();
+
+
     virtual void TryLink();
     bool CanDetectTarget(CBattleEntity* PTarget, bool forceSight = false);
+    bool CanPursueTarget(CBattleEntity* PTarget);
+    bool CheckHide(CBattleEntity* PTarget);
+    bool CheckDetection(CBattleEntity* PTarget);
     bool CanSeePoint(position_t pos);
     bool CanCastSpells();
     void CastSpell(uint16 spellid);
+    void Move();
 
     virtual void DoCombatTick(time_point tick);
 
@@ -65,6 +69,8 @@ protected:
     void Wait(duration _duration);
     void FollowRoamPath();
     bool CanMoveForward(float currentDistance);
+    bool IsSpecialSkillReady(float currentDistance);
+    bool IsSpellReady(float currentDistance);
 
     CBattleEntity* PTarget {nullptr};
 private:
@@ -75,6 +81,7 @@ private:
     time_point m_LastMagicTime;
     time_point m_LastMobSkillTime;
     time_point m_LastSpecialTime;
+    time_point m_DeaggroTime;
     time_point m_NeutralTime;
     time_point m_WaitTime;
 

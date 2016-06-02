@@ -119,6 +119,16 @@ bool CPathFind::PathTo(const position_t& point, uint8 pathFlags, bool clear)
     return true;
 }
 
+bool CPathFind::PathInRange(const position_t& point, float range, uint8 pathFlags /*= 0*/, bool clear /*= true*/)
+{
+    if (clear)
+    {
+        Clear();
+    }
+    m_distanceFromPoint = range;
+    return PathTo(point, pathFlags, false);
+}
+
 bool CPathFind::PathAround(const position_t& point, float distanceFromPoint, uint8 pathFlags)
 {
     Clear();
@@ -281,15 +291,24 @@ void CPathFind::StepTo(const position_t& pos, bool run)
     // face point mob is moving towards
     LookAt(pos);
 
-    if (distanceTo <= stepDistance ||
-        (m_pathFlags & PATHFLAG_SLIDE) && distance(m_originalPoint, m_PTarget->loc.p) < m_distanceFromPoint)
+    if (distanceTo <= m_distanceFromPoint + stepDistance)
     {
-        m_distanceMoved += distanceTo;
+        m_distanceMoved += distanceTo - m_distanceFromPoint;
 
-        m_PTarget->loc.p.x = pos.x;
-        m_PTarget->loc.p.y = pos.y;
-        m_PTarget->loc.p.z = pos.z;
+        if (m_distanceFromPoint == 0)
+        {
+            m_PTarget->loc.p.x = pos.x;
+            m_PTarget->loc.p.y = pos.y;
+            m_PTarget->loc.p.z = pos.z;
+        }
+        else
+        {
+            float radians = (1 - (float)m_PTarget->loc.p.rotation / 256) * 2 * M_PI;
 
+            m_PTarget->loc.p.x += cosf(radians) * (distanceTo - m_distanceFromPoint);
+            m_PTarget->loc.p.y = pos.y;
+            m_PTarget->loc.p.z += sinf(radians) * (distanceTo - m_distanceFromPoint);
+        }
     }
     else
     {
@@ -298,9 +317,7 @@ void CPathFind::StepTo(const position_t& pos, bool run)
         float radians = (1 - (float)m_PTarget->loc.p.rotation / 256) * 2 * M_PI;
 
         m_PTarget->loc.p.x += cosf(radians) * stepDistance;
-
         m_PTarget->loc.p.y = pos.y;
-
         m_PTarget->loc.p.z += sinf(radians) * stepDistance;
 
     }
@@ -324,7 +341,7 @@ bool CPathFind::FindPath(const position_t& start, const position_t& end)
 
     if (m_points.size() <= 0)
     {
-        ShowError("CPathFind::FindPath Entity (%d) could not find path\n", m_PTarget->id);
+        ShowNavError("CPathFind::FindPath Entity (%d) could not find path\n", m_PTarget->id);
         return false;
     }
 
@@ -423,11 +440,18 @@ bool CPathFind::IsFollowingScriptedPath()
 
 bool CPathFind::AtPoint(const position_t& pos)
 {
-    return m_PTarget->loc.p.x == pos.x && m_PTarget->loc.p.z == pos.z;
+    if (m_distanceFromPoint == 0)
+        return m_PTarget->loc.p.x == pos.x && m_PTarget->loc.p.z == pos.z;
+    else
+        return distance(m_PTarget->loc.p, pos) <= (m_distanceFromPoint + .2f);
 }
 
 bool CPathFind::InWater()
 {
+    if (m_PTarget->loc.zone->GetWeather() == WEATHER_SQUALL)
+    {
+        return true;
+    }
     if (isNavMeshEnabled())
     {
         return m_PTarget->loc.zone->m_navMesh->inWater(m_PTarget->loc.p);

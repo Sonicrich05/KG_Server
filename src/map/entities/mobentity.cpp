@@ -101,7 +101,9 @@ CMobEntity::CMobEntity()
 
     m_giveExp = false;
     m_neutral = false;
-    m_Aggro = AGGRO_NONE;
+    m_Aggro = false;
+    m_TrueDetection = false;
+    m_Detects = DETECT_NONE;
     m_Link = 0;
 
     m_battlefieldID = 0;
@@ -242,7 +244,7 @@ void CMobEntity::ResetGilPurse()
 
 bool CMobEntity::CanRoamHome()
 {
-    if (speed == 0 && !(m_roamFlags & ROAMFLAG_WORM)) return false;
+    if ((speed == 0 && !(m_roamFlags & ROAMFLAG_WORM)) || getMobMod(MOBMOD_NO_MOVE) > 0) return false;
 
     if (getMobMod(MOBMOD_NO_DESPAWN) != 0 ||
         map_config.mob_no_despawn)
@@ -255,7 +257,7 @@ bool CMobEntity::CanRoamHome()
 
 bool CMobEntity::CanRoam()
 {
-    return !(m_roamFlags & ROAMFLAG_EVENT) && PMaster == nullptr && (speed > 0 || (m_roamFlags & ROAMFLAG_WORM));
+    return !(m_roamFlags & ROAMFLAG_EVENT) && PMaster == nullptr && (speed > 0 || (m_roamFlags & ROAMFLAG_WORM)) && getMobMod(MOBMOD_NO_MOVE) == 0;
 }
 
 bool CMobEntity::CanLink(position_t* pos, int16 superLink)
@@ -272,8 +274,14 @@ bool CMobEntity::CanLink(position_t* pos, int16 superLink)
         return false;
     }
 
+    // Don't link I'm an underground worm
+    if ((m_roamFlags & ROAMFLAG_WORM) && IsNameHidden())
+    {
+        return false;
+    }
+
     // link only if I see him
-    if ((m_Aggro & AGGRO_DETECT_SIGHT) || (m_Aggro & AGGRO_DETECT_TRUESIGHT)) {
+    if (m_Detects & DETECT_SIGHT) {
 
         if (!isFaceing(loc.p, *pos, 40))
         {
@@ -281,13 +289,16 @@ bool CMobEntity::CanLink(position_t* pos, int16 superLink)
         }
     }
 
-    if (!PAI->PathFind->CanSeePoint(*pos))
+    if (distance(loc.p, *pos) > getMobMod(MOBMOD_LINK_RADIUS))
     {
         return false;
     }
 
-    // link if close enough
-    return distance(loc.p, *pos) <= getMobMod(MOBMOD_LINK_RADIUS);
+    if (!PAI->PathFind->CanSeePoint(*pos))
+    {
+        return false;
+    }
+    return true;
 }
 
 /************************************************************************
@@ -418,35 +429,35 @@ void CMobEntity::HideModel(bool hide)
     {
         // I got this from ambush antlion
         // i'm not sure if this is right
-        m_flags |= 0x80;
+        m_flags |= FLAG_HIDE_MODEL;
     }
     else
     {
-        m_flags &= ~0x80;
+        m_flags &= ~FLAG_HIDE_MODEL;
     }
 }
 
 bool CMobEntity::IsModelHidden()
 {
-    return (m_flags & 0x80) == 0x80;
+    return m_flags & FLAG_HIDE_MODEL;
 }
 
 void CMobEntity::HideHP(bool hide)
 {
     if (hide)
     {
-        m_flags |= 0x100;
+        m_flags |= FLAG_HIDE_HP;
     }
     else
     {
-        m_flags &= ~0x100;
+        m_flags &= ~FLAG_HIDE_HP;
     }
     updatemask |= UPDATE_HP;
 }
 
 bool CMobEntity::IsHPHidden()
 {
-    return (m_flags & 0x100) == 0x100;
+    return m_flags & FLAG_HIDE_HP;
 }
 
 
@@ -454,36 +465,36 @@ void CMobEntity::CallForHelp(bool call)
 {
     if (call)
     {
-        m_flags |= 0x20;
+        m_flags |= FLAG_CALL_FOR_HELP;
     }
     else
     {
-        m_flags &= ~0x20;
+        m_flags &= ~FLAG_CALL_FOR_HELP;
     }
     updatemask |= UPDATE_HP;
 }
 
 bool CMobEntity::CalledForHelp()
 {
-    return (m_flags & 0x20) == 0x20;
+    return m_flags & FLAG_CALL_FOR_HELP;
 }
 
 void CMobEntity::Untargetable(bool untargetable)
 {
     if (untargetable)
     {
-        m_flags |= 0x800;
+        m_flags |= FLAG_UNTARGETABLE;
     }
     else
     {
-        m_flags &= ~0x800;
+        m_flags &= ~FLAG_UNTARGETABLE;
     }
     updatemask |= UPDATE_HP;
 }
 
 bool CMobEntity::IsUntargetable()
 {
-    return (m_flags & 0x800) == 0x800;
+    return m_flags & FLAG_UNTARGETABLE;
 }
 
 void CMobEntity::PostTick()
@@ -564,14 +575,6 @@ void CMobEntity::Spawn()
     // spawn somewhere around my point
     loc.p = m_SpawnPoint;
 
-    if (m_roamFlags & ROAMFLAG_AMBUSH)
-    {
-        HideName(true);
-        animationsub = 0;
-        // this will hide the mob
-        HideModel(true);
-    }
-
     if (m_roamFlags & ROAMFLAG_STEALTH)
     {
         HideName(true);
@@ -602,15 +605,18 @@ void CMobEntity::OnWeaponSkillFinished(CWeaponSkillState& state, action_t& actio
     auto PSkill = state.GetSkill();
     auto PBattleTarget = static_cast<CBattleEntity*>(state.GetTarget());
     PAI->EventHandler.triggerListener("WEAPONSKILL_USE", this, PSkill->getID());
-    //#TODO
+
+    static_cast<CMobController*>(PAI->GetController())->TapDeaggroTime();
 }
 
 
 void CMobEntity::OnMobSkillFinished(CMobSkillState& state, action_t& action)
 {
+
     auto PSkill = state.GetSkill();
     auto PTarget = static_cast<CBattleEntity*>(state.GetTarget());
 
+    static_cast<CMobController*>(PAI->GetController())->TapDeaggroTime();
 
     // store the skill used
     m_UsedSkillIds[PSkill->getID()] = GetMLevel();
@@ -631,7 +637,8 @@ void CMobEntity::OnMobSkillFinished(CMobSkillState& state, action_t& action)
     }
 
     action.id = id;
-    if (objtype == TYPE_PET && static_cast<CPetEntity*>(this)->getPetType() != PETTYPE_JUG_PET)
+    if (objtype == TYPE_PET && static_cast<CPetEntity*>(this)->getPetType() == PETTYPE_JUG_PET &&
+        static_cast<CPetEntity*>(this)->getPetType() == PETTYPE_AUTOMATON)
         action.actiontype = ACTION_PET_MOBABILITY_FINISH;
     else if (PSkill->getID() < 256)
         action.actiontype = ACTION_WEAPONSKILL_FINISH;
@@ -901,10 +908,40 @@ void CMobEntity::DropItems()
     }
 }
 
+
+bool CMobEntity::CanAttack(CBattleEntity* PTarget, std::unique_ptr<CMessageBasicPacket>& errMsg)
+{
+    auto skill_list_id {getMobMod(MOBMOD_ATTACK_SKILL_LIST)};
+    if (skill_list_id)
+    {
+        auto attack_range {m_ModelSize};
+        auto skillList {battleutils::GetMobSkillList(skill_list_id)};
+        if (!skillList.empty())
+        {
+            auto skill {battleutils::GetMobSkill(skillList.front())};
+            if (skill)
+            {
+                attack_range = skill->getDistance();
+            }
+        }
+        if (distance(loc.p, PTarget->loc.p) > attack_range || !PAI->GetController()->IsAutoAttackEnabled())
+        {
+            return false;
+        }
+        return true;
+    }
+    else
+    {
+        return CBattleEntity::CanAttack(PTarget, errMsg);
+    }
+}
+
 void CMobEntity::OnEngage(CAttackState& state)
 {
     CBattleEntity::OnEngage(state);
     luautils::OnMobEngaged(this, state.GetTarget());
+
+    static_cast<CMobController*>(PAI->GetController())->TapDeaggroTime();
 }
 
 void CMobEntity::FadeOut()
@@ -915,7 +952,8 @@ void CMobEntity::FadeOut()
 
 void CMobEntity::OnDeathTimer()
 {
-    PAI->Despawn();
+    if (!(m_Behaviour & BEHAVIOUR_RAISABLE))
+        PAI->Despawn();
 }
 
 void CMobEntity::Die()
@@ -956,4 +994,25 @@ void CMobEntity::OnDisengage(CAttackState& state)
     CBattleEntity::OnDisengage(state);
 
     luautils::OnMobDisengage(this);
+}
+
+void CMobEntity::OnCastFinished(CMagicState& state, action_t& action)
+{
+    CBattleEntity::OnCastFinished(state, action);
+
+    static_cast<CMobController*>(PAI->GetController())->TapDeaggroTime();
+}
+
+bool CMobEntity::OnAttack(CAttackState& state, action_t& action)
+{
+    static_cast<CMobController*>(PAI->GetController())->TapDeaggroTime();
+
+    if (getMobMod(MOBMOD_ATTACK_SKILL_LIST))
+    {
+        return static_cast<CMobController*>(PAI->GetController())->MobSkill(getMobMod(MOBMOD_ATTACK_SKILL_LIST));
+    }
+    else
+    {
+        return CBattleEntity::OnAttack(state, action);
+    }
 }

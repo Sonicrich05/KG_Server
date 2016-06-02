@@ -10,20 +10,19 @@ require("scripts/zones/Batallia_Downs/MobIDs");
 -- onMobDeath
 -----------------------------------
 
-function onMobDeath(mob,killer,ally)
-    checkRegime(ally,mob,72,1);
-    checkRegime(ally,mob,73,1);
+function onMobDeath(mob, player, isKiller)
+    checkRegime(player,mob,72,1);
+    checkRegime(player,mob,73,1);
 
-    mob = mob:getID();
-    if (Tottering_Toby_PH[mob] ~= nil) then
-
-        ToD = GetServerVariable("[POP]Tottering_Toby");
+    local mobID = mob:getID();
+    if (Tottering_Toby_PH[mobID] ~= nil) then
+        local ToD = GetServerVariable("[POP]Tottering_Toby");
         if (ToD <= os.time(t) and GetMobAction(Tottering_Toby) == 0) then
-            if (math.random((1),(20)) == 5) then
+            if (math.random(1,20) == 5) then
                 UpdateNMSpawnPoint(Tottering_Toby);
-                GetMobByID(Tottering_Toby):setRespawnTime(GetMobRespawnTime(mob));
-                SetServerVariable("[PH]Tottering_Toby", mob);
-                DeterMob(mob, true);
+                GetMobByID(Tottering_Toby):setRespawnTime(GetMobRespawnTime(mobID));
+                SetServerVariable("[PH]Tottering_Toby", mobID);
+                DeterMob(mobID, true);
             end
         end
     end

@@ -41,7 +41,7 @@ function onUseAbility(player,target,ability,action)
 
     if (target:isMob()) then
         local enmityShed = 50;
-        if player:getMainJob() ~= JOB_DRG then 
+        if player:getMainJob() ~= JOBS.DRG then 
             enmityShed = 30;
         end
         target:lowerEnmity(player, enmityShed + player:getMod(MOD_HIGH_JUMP_ENMITY_REDUCTION)); -- reduce total accumulated enmity
@@ -52,7 +52,7 @@ function onUseAbility(player,target,ability,action)
     if (tpHits + extraHits > 0) then
         -- Under Spirit Surge, High Jump reduces TP of target
         if (player:hasStatusEffect(EFFECT_SPIRIT_SURGE) == true) then
-            target:delTP(damage * 2)
+            target:delTP(damage * 0.2)
         end
         if (criticalHit) then
             action:speceffect(target:getID(), 38)

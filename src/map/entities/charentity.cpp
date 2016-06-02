@@ -103,6 +103,7 @@ CCharEntity::CCharEntity()
     m_Mogcase = new CItemContainer(LOC_MOGCASE);
     m_Wardrobe = new CItemContainer(LOC_WARDROBE);
     m_Mogsafe2 = new CItemContainer(LOC_MOGSAFE2);
+    m_Wardrobe2 = new CItemContainer(LOC_WARDROBE2);
 
     memset(&jobs, 0, sizeof(jobs));
     memset(&keys, 0, sizeof(keys));
@@ -156,6 +157,7 @@ CCharEntity::CCharEntity()
 
     m_EquipFlag = 0;
     m_EquipBlock = 0;
+    m_StatsDebilitation = 0;
     m_EquipSwap = false;
 
     MeritMode = false;
@@ -312,6 +314,7 @@ CItemContainer* CCharEntity::getStorage(uint8 LocationID)
         case LOC_MOGCASE:	 return m_Mogcase;
         case LOC_WARDROBE:   return m_Wardrobe;
         case LOC_MOGSAFE2:   return m_Mogsafe2;
+        case LOC_WARDROBE2:  return m_Wardrobe2;
     }
 
     DSP_DEBUG_BREAK_IF(LocationID >= MAX_CONTAINER_ID);	// неразрешенный ID хранилища
@@ -498,22 +501,26 @@ bool CCharEntity::ValidTarget(CBattleEntity* PInitiator, uint16 targetFlags)
     {
         return false;
     }
+    if (isDead())
+    {
+        if (targetFlags & TARGET_PLAYER_DEAD)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
     if (CBattleEntity::ValidTarget(PInitiator, targetFlags))
     {
         return true;
     }
 
-    if (targetFlags & TARGET_PLAYER)
-    {
-        return true;
-    }
-    if ((targetFlags & TARGET_PLAYER_PARTY) &&
+    if (((targetFlags & TARGET_PLAYER_PARTY) || ((targetFlags & TARGET_PLAYER_PARTY_PIANISSIMO) &&
+        PInitiator->StatusEffectContainer->HasStatusEffect(EFFECT_PIANISSIMO))) &&
         ((PParty && PInitiator->PParty == PParty) ||
         PInitiator->PMaster && PInitiator->PMaster->PParty == PParty))
-    {
-        return true;
-    }
-    if ((targetFlags & TARGET_PLAYER_DEAD) && isDead())
     {
         return true;
     }
@@ -870,7 +877,7 @@ void CCharEntity::OnAbility(CAbilityState& state, action_t& action)
         auto charge = ability::GetCharge(this, PAbility->getRecastId());
         if (charge && PAbility->getID() != ABILITY_SIC)
         {
-            action.recast = charge->chargeTime * PAbility->getRecastTime();
+            action.recast = charge->chargeTime * PAbility->getRecastTime() - meritRecastReduction;
         }
         else
         {
@@ -1033,24 +1040,6 @@ void CCharEntity::OnAbility(CAbilityState& state, action_t& action)
 
 
             //#TODO: move all of these to script!
-            // Shadow Bind
-            //if (PAbility->getID() == ABILITY_SHADOWBIND)
-            //{
-            //    //action.flag = 3;
-
-            //    uint16 shadowBindDuration = 30 + this->getMod(MOD_SHADOW_BIND_EXT);
-            //    if (dsprand::GetRandomNumber(100) >= PTarget->getMod(MOD_BINDRES))
-            //    {
-            //        // Shadow bind success!
-            //        this->loc.zone->PushPacket(this, CHAR_INRANGE_SELF, new CMessageBasicPacket(this, PTarget, PAbility->getID() + 16, 11, 277));
-            //        PTarget->StatusEffectContainer->AddStatusEffect(new CStatusEffect(EFFECT_BIND, EFFECT_BIND, 1, 0, shadowBindDuration));
-            //    }
-            //    else
-            //    {
-            //        // Shadowbind failed!
-            //        this->loc.zone->PushPacket(this, CHAR_INRANGE_SELF, new CMessageBasicPacket(this, PTarget, PAbility->getID() + 16, 11, 283));
-            //    }
-            //}
 
             //// Super Jump
             //else if (PAbility->getID() == ABILITY_SUPER_JUMP)
@@ -1556,7 +1545,7 @@ void CCharEntity::Die()
     else
     {
         auto PTarget = GetEntity(GetBattleTargetID());
-        loc.zone->PushPacket(this, CHAR_INRANGE_SELF, new CMessageBasicPacket(this, PTarget, 0, 0, 97));
+        loc.zone->PushPacket(this, CHAR_INRANGE_SELF, new CMessageBasicPacket(PTarget, this, 0, 0, 97));
     }
     Die(60min);
     m_DeathCounter = 0;

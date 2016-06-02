@@ -214,7 +214,7 @@ void CZoneEntities::WeatherChange(WEATHER weather)
 
         PCurrentMob->PAI->EventHandler.triggerListener("WEATHER_CHANGE", PCurrentMob, static_cast<int>(weather), element);
         // can't detect by scent in this weather
-        if (PCurrentMob->m_Aggro & AGGRO_SCENT)
+        if (PCurrentMob->m_Detects & DETECT_SCENT)
         {
             PCurrentMob->m_disableScent = (weather == WEATHER_RAIN || weather == WEATHER_SQUALL || weather == WEATHER_BLIZZARDS);
         }
@@ -433,7 +433,7 @@ void CZoneEntities::SpawnMOBs(CCharEntity* PChar)
 
             if (validAggro && PController->CanAggroTarget(PChar))
             {
-                PCurrentMob->PEnmityContainer->AddAggroEnmity(PChar);
+                PCurrentMob->PEnmityContainer->AddBaseEnmity(PChar);
             }
         }
         else
@@ -1022,6 +1022,12 @@ void CZoneEntities::ZoneServerRegion(time_point tick)
             m_zone->CheckRegions(PChar);
         }
     }
+}
+
+
+CZone* CZoneEntities::GetZone()
+{
+    return m_zone;
 }
 
 EntityList_t CZoneEntities::GetCharList()

@@ -69,7 +69,6 @@ CMagicState::CMagicState(CBattleEntity* PEntity, uint16 targid, uint16 spellid, 
 
     m_castTime = std::chrono::milliseconds(battleutils::CalculateSpellCastTime(m_PEntity, GetSpell()));
     m_startPos = m_PEntity->loc.p;
-    m_interrupted = false;
 
     action_t action;
     action.id = m_PEntity->id;
@@ -165,7 +164,8 @@ bool CMagicState::CanCastSpell(CBattleEntity* PTarget)
         return ret;
     }
     if (m_PEntity->StatusEffectContainer->HasStatusEffect(EFFECT_SILENCE) ||
-        m_PEntity->StatusEffectContainer->HasStatusEffect(EFFECT_MUTE))
+        m_PEntity->StatusEffectContainer->HasStatusEffect(EFFECT_MUTE) ||
+        m_PEntity->StatusEffectContainer->HasStatusEffect(EFFECT_OMERTA))
     {
         m_errorMsg = std::make_unique<CMessageBasicPacket>(m_PEntity, m_PEntity, m_PSpell->getID(), 0, MSGBASIC_UNABLE_TO_CAST_SPELLS);
         return false;
@@ -177,6 +177,10 @@ bool CMagicState::CanCastSpell(CBattleEntity* PTarget)
     if (!PTarget)
     {
         m_errorMsg = std::make_unique<CMessageBasicPacket>(m_PEntity, m_PEntity, m_PSpell->getID(), 0, MSGBASIC_CANNOT_ON_THAT_TARG);
+        return false;
+    }
+    if (PTarget->IsNameHidden())
+    {
         return false;
     }
     if (distance(m_PEntity->loc.p, PTarget->loc.p) > 40)

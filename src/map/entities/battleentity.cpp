@@ -264,10 +264,10 @@ int16 CBattleEntity::GetRangedWeaponDelay(bool tp)
     CItemWeapon* PAmmo = (CItemWeapon*)m_Weapons[SLOT_AMMO];
 
     // base delay
-    int delay = 240;
+    int delay = 0;
 
     if (PRange != nullptr && PRange->getDamage() != 0) {
-        delay += ((PRange->getDelay() * 60) / 1000);
+        delay = ((PRange->getDelay() * 60) / 1000);
     }
 
     delay = (((delay - getMod(MOD_RANGED_DELAY)) * 1000) / 120);
@@ -279,7 +279,7 @@ int16 CBattleEntity::GetRangedWeaponDelay(bool tp)
     }
     else if (PAmmo)
     {
-        delay += ((PAmmo->getDelay() * 60) / 1000);
+        delay += PAmmo->getDelay() / 2;
     }
     return delay;
 }
@@ -288,12 +288,11 @@ int16 CBattleEntity::GetAmmoDelay()
 {
     CItemWeapon* PAmmo = (CItemWeapon*)m_Weapons[SLOT_AMMO];
 
-    int delay = 240;
+    int delay = 0;
     if (PAmmo != nullptr && PAmmo->getDamage() != 0) {
-        delay += ((PAmmo->getDelay() * 60) / 1000);
+        delay = PAmmo->getDelay() / 2;
     }
 
-    delay = ((delay * 1000) / 120);
     return delay;
 }
 
@@ -703,6 +702,7 @@ JOBTYPE CBattleEntity::GetSJob()
 
 uint8 CBattleEntity::GetSLevel()
 {
+    if (StatusEffectContainer->HasStatusEffect(EFFECT_OBLIVISCENCE)) { return 0; }
     return m_slvl;
 }
 
@@ -1101,6 +1101,10 @@ bool CBattleEntity::ValidTarget(CBattleEntity* PInitiator, uint16 targetFlags)
     {
         return true;
     }
+    if ((targetFlags & TARGET_PLAYER) && allegiance == PInitiator->allegiance)
+    {
+        return true;
+    }
     return false;
 }
 
@@ -1337,7 +1341,7 @@ bool CBattleEntity::OnAttack(CAttackState& state, action_t& action)
 {
     auto PTarget = static_cast<CBattleEntity*>(state.GetTarget());
 
-    if (PTarget->objtype == TYPE_PC) 
+    if (PTarget->objtype == TYPE_PC)
     {
         // TODO: Should not be removed by AoE effects that don't target the player.
         PTarget->StatusEffectContainer->DelStatusEffectsByFlag(EFFECTFLAG_DETECTABLE);
@@ -1370,7 +1374,7 @@ bool CBattleEntity::OnAttack(CAttackState& state, action_t& action)
     {
         actionTarget_t& actionTarget = list.getNewActionTarget();
         // Reference to the current swing.
-        CAttack attack = attackRound.GetCurrentAttack();
+        CAttack& attack = attackRound.GetCurrentAttack();
 
         // Set the swing animation.
         actionTarget.animation = attack.GetAnimationID();
@@ -1575,6 +1579,7 @@ bool CBattleEntity::OnAttack(CAttackState& state, action_t& action)
         }
     }
     PAI->EventHandler.triggerListener("ATTACK", this, PTarget, &action);
+    PTarget->PAI->EventHandler.triggerListener("ATTACKED", PTarget, this, &action);
     /////////////////////////////////////////////////////////////////////////////////////////////
     // End of attack loop
     /////////////////////////////////////////////////////////////////////////////////////////////

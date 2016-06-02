@@ -38,7 +38,7 @@ function onMobFight(mob, target)
             mob:setLocalVar("2hour",1);
         end
     elseif (mob:getHPP() <= 77) then
-        if (mob:getTP() >= 100) then
+        if (mob:getTP() >= 1000) then
             if ((GetMobAction(shadow1) and GetMobAction(shadow2)) == 0) then
                 mob:useMobAbility(984);
             end
@@ -49,7 +49,7 @@ end;
 -----------------------------------
 -- onMobDeath
 -----------------------------------
-function onMobDeath(mob,killer,ally)
+function onMobDeath(mob, player, isKiller)
     mob:setLocalVar("2hour",0);
     mob:setLocalVar("2hourtime",0);
     DespawnMob(mob:getID()+1);

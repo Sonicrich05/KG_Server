@@ -23,11 +23,11 @@ function onUseWeaponSkill(player, target, wsID, tp, primary)
 
     local drain = 0;
 
-    if (tp >= 100 and tp <=199) then
+    if (tp >= 1000 and tp <=1999) then
         drain = 50;
-    elseif (tp >= 200 and tp <= 299) then
+    elseif (tp >= 2000 and tp <= 2999) then
         drain = 75;
-    elseif (tp == 300) then
+    elseif (tp == 3000) then
         drain = 100;
     end
 
@@ -37,6 +37,15 @@ function onUseWeaponSkill(player, target, wsID, tp, primary)
     params.ele = ELE_DARK;
     params.skill = SKILL_SWD;
     params.includemab = true;
+
+
+    if (USE_ADOULIN_WEAPON_SKILL_CHANGES == true) then
+        if (tp >= 2000 and tp <= 2999) then
+            drain = 100;
+        elseif (tp == 3000) then
+            drain = 160;
+        end
+    end
 
     local damage, criticalHit, tpHits, extraHits = doMagicWeaponskill(player, target, wsID, params, tp, primary);
 
