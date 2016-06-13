@@ -49,8 +49,10 @@ function onEventFinish(player,csid,option)
     
     if (csid == 0x0008) then
         player:tradeComplete();
-        player:addGil(GIL_RATE*50);
-        player:messageSpecial(GIL_OBTAINED,GIL_RATE*50);
+		player:addGil(GIL_RATE*200000);
+		player:addKeyItem(AIRSHIP_PASS);
+		player:messageSpecial(KEYITEM_OBTAINED,AIRSHIP_PASS);	
+		player:messageSpecial(GIL_OBTAINED,GIL_RATE*200000);
     end
     
 end;
