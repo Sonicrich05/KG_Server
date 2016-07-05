@@ -7377,6 +7377,10 @@ inline int32 CLuaBaseEntity::setRespawnTime(lua_State* L)
     if (!lua_isnil(L, 1) && lua_isnumber(L, 1))
     {
         PMob->m_RespawnTime = lua_tointeger(L, 1) * 1000;
+        if (PMob->PAI->IsCurrentState<CDespawnState>())
+        {
+            PMob->PAI->GetCurrentState()->ResetEntryTime();
+        }
 
         if (!lua_isnil(L, 2) && lua_isboolean(L, 2) && lua_toboolean(L, 2)) //set optional parameter to true to only modify the timer
             return 0;
@@ -9823,14 +9827,17 @@ inline int32 CLuaBaseEntity::getEnmityList(lua_State* L)
         int i = 1;
         for (auto member : *enmityList)
         {
-            lua_getglobal(L, CLuaBaseEntity::className);
-            lua_pushstring(L, "new");
-            lua_gettable(L, -2);
-            lua_insert(L, -2);
-            lua_pushlightuserdata(L, (void*)member.second->PEnmityOwner);
-            lua_pcall(L, 2, 1, 0);
+            if (member.second.PEnmityOwner)
+            {
+                lua_getglobal(L, CLuaBaseEntity::className);
+                lua_pushstring(L, "new");
+                lua_gettable(L, -2);
+                lua_insert(L, -2);
+                lua_pushlightuserdata(L, (void*)member.second.PEnmityOwner);
+                lua_pcall(L, 2, 1, 0);
 
-            lua_rawseti(L, -2, i++);
+                lua_rawseti(L, -2, i++);
+            }
         }
     }
     else

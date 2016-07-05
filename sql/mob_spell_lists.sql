@@ -1418,6 +1418,9 @@ INSERT INTO `mob_spell_lists` VALUES ('Sarameya', 139, 205, 1, 255);
 INSERT INTO `mob_spell_lists` VALUES ('Sarameya', 139, 249, 1, 255);
 
 
+-- Wake Warder Wanda
+INSERT INTO `mob_spell_lists` VALUES ('Wake_Warder_Wanda', 151, 240, 1, 255);  -- Drown
+
 /*!40000 ALTER TABLE `mob_spell_lists` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

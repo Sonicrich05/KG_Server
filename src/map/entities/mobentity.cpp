@@ -637,8 +637,9 @@ void CMobEntity::OnMobSkillFinished(CMobSkillState& state, action_t& action)
     }
 
     action.id = id;
-    if (objtype == TYPE_PET && static_cast<CPetEntity*>(this)->getPetType() == PETTYPE_JUG_PET &&
-        static_cast<CPetEntity*>(this)->getPetType() == PETTYPE_AUTOMATON)
+    if (objtype == TYPE_PET && (
+        static_cast<CPetEntity*>(this)->getPetType() == PETTYPE_AUTOMATON ||
+        static_cast<CPetEntity*>(this)->getPetType() == PETTYPE_AVATAR))
         action.actiontype = ACTION_PET_MOBABILITY_FINISH;
     else if (PSkill->getID() < 256)
         action.actiontype = ACTION_WEAPONSKILL_FINISH;
@@ -746,7 +747,7 @@ void CMobEntity::OnMobSkillFinished(CMobSkillState& state, action_t& action)
                     SUBEFFECT effect = battleutils::GetSkillChainEffect(PTarget, PWeaponSkill);
                     if (effect != SUBEFFECT_NONE)
                     {
-                        int32 skillChainDamage = battleutils::TakeSkillchainDamage(this, PTarget, target.param);
+                        int32 skillChainDamage = battleutils::TakeSkillchainDamage(this, PTarget, target.param, nullptr);
                         if (skillChainDamage < 0)
                         {
                             target.addEffectParam = -skillChainDamage;
